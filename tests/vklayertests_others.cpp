@@ -2281,6 +2281,22 @@ TEST_F(VkLayerTest, InvalidDeviceMask) {
     vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &mem);
     m_errorMonitor->VerifyFound();
 
+    uint32_t pdev_count = 0;
+    VkResult err = vk::EnumeratePhysicalDevices(instance_, &pdev_count, NULL);
+    if (pdev_count > 1) {
+        void *data;
+        VkDeviceMemory mi_mem;
+        alloc_flags_info.deviceMask = 3;
+        err = vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &mi_mem);
+        if (VK_SUCCESS == err) {
+            printf("%s XXXXXXXXX Running MultiInstance test\n", kSkipPrefix);
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkMapMemory-memory-00683");
+            vk::MapMemory(m_device->device(), mi_mem, 0, 1024, 0, &data);
+            m_errorMonitor->VerifyFound();
+            vk::FreeMemory(m_device->device(), mi_mem, nullptr);
+        }
+    }
+
     // Test VkDeviceGroupCommandBufferBeginInfo
     VkDeviceGroupCommandBufferBeginInfo dev_grp_cmd_buf_info = {};
     dev_grp_cmd_buf_info.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_COMMAND_BUFFER_BEGIN_INFO;
